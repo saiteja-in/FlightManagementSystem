@@ -3,8 +3,8 @@ package com.saiteja.flightservice.service.impl;
 import com.saiteja.flightservice.dto.ApiResponse;
 import com.saiteja.flightservice.dto.FlightCreateRequest;
 import com.saiteja.flightservice.dto.FlightResponse;
+import com.saiteja.flightservice.dto.FlightResponseWrapper;
 import com.saiteja.flightservice.exception.DuplicateResourceException;
-import com.saiteja.flightservice.exception.ResourceNotFoundException;
 import com.saiteja.flightservice.model.Flight;
 import com.saiteja.flightservice.repository.FlightRepository;
 import com.saiteja.flightservice.service.FlightService;
@@ -56,11 +56,18 @@ public class FlightServiceImpl implements FlightService {
 
     @Override
     @Transactional(readOnly = true)
-    public FlightResponse getFlightByFlightNumber(String flightNumber) {
-        Flight flight = flightRepository.findByFlightNumber(flightNumber.trim().toUpperCase())
-                .orElseThrow(() -> new ResourceNotFoundException("Flight not found with number: " + flightNumber));
-
-        return toResponse(flight);
+    public FlightResponseWrapper getFlightByFlightNumber(String flightNumber) {
+        return flightRepository.findByFlightNumber(flightNumber.trim().toUpperCase())
+                .map(flight -> FlightResponseWrapper.builder()
+                        .flight(toResponse(flight))
+                        .message("Flight retrieved successfully")
+                        .status("FOUND")
+                        .build())
+                .orElse(FlightResponseWrapper.builder()
+                        .flight(null)
+                        .message("Flight with number " + flightNumber + " does not exist")
+                        .status("NOT_FOUND")
+                        .build());
     }
 
     @Override

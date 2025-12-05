@@ -3,6 +3,7 @@ package com.saiteja.flightservice.controller;
 import com.saiteja.flightservice.dto.ApiResponse;
 import com.saiteja.flightservice.dto.FlightCreateRequest;
 import com.saiteja.flightservice.dto.FlightResponse;
+import com.saiteja.flightservice.dto.FlightResponseWrapper;
 import com.saiteja.flightservice.service.FlightService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -37,9 +38,9 @@ public class FlightController {
     }
 
     @GetMapping("/{flightNumber}")
-    public ResponseEntity<FlightResponse> getFlight(@PathVariable String flightNumber) {
-        FlightResponse flight = flightService.getFlightByFlightNumber(flightNumber);
-        return ResponseEntity.ok(flight);
+    public ResponseEntity<FlightResponseWrapper> getFlight(@PathVariable String flightNumber) {
+        FlightResponseWrapper response = flightService.getFlightByFlightNumber(flightNumber);
+        return ResponseEntity.ok(response);
     }
 
     @DeleteMapping("/{id}")
