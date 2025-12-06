@@ -3,7 +3,6 @@ package com.saiteja.bookingservice.controller;
 import com.saiteja.bookingservice.dto.ApiResponse;
 import com.saiteja.bookingservice.dto.booking.BookingCreateRequest;
 import com.saiteja.bookingservice.dto.booking.BookingResponse;
-import com.saiteja.bookingservice.dto.ticket.TicketResponse;
 import com.saiteja.bookingservice.service.BookingService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -26,13 +25,13 @@ public class BookingController {
     }
 
     @PostMapping("/booking/{scheduleId}")
-    public ResponseEntity<TicketResponse> bookFlight(
+    public ResponseEntity<String> bookFlight(
             @PathVariable String scheduleId,
             @Valid @RequestBody BookingCreateRequest request
     ) {
         request.setScheduleIds(List.of(scheduleId));
-        TicketResponse response = bookingService.createBooking(request);
-        return ResponseEntity.status(HttpStatus.CREATED).body(response);
+        String pnr = bookingService.createBooking(request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(pnr);
     }
 
     @GetMapping("/booking/{pnr}")

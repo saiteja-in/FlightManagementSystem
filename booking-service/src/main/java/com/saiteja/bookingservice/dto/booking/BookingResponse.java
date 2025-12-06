@@ -19,7 +19,6 @@ public class BookingResponse {
     private String contactEmail;
     private List<String> scheduleIds;
     private List<PassengerResponse> passengers;
-    private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
 }

@@ -35,7 +35,7 @@ public class BookingServiceImpl implements BookingService {
     private final FlightServiceClient flightServiceClient;
 
     @Override
-    public TicketResponse createBooking(BookingCreateRequest request) {
+    public String createBooking(BookingCreateRequest request) {
         if (request.getScheduleIds() == null || request.getScheduleIds().isEmpty()) {
             throw new BadRequestException("At least one schedule id is required");
         }
@@ -80,8 +80,9 @@ public class BookingServiceImpl implements BookingService {
 
         Booking savedBooking = bookingRepository.save(booking);
 
-        // Generate ticket (returns first ticket, but generates tickets for all schedules)
-        return ticketService.generateTicket(savedBooking.getId());
+        ticketService.generateTicket(savedBooking.getId());
+
+        return pnr;
     }
 
     @Override
@@ -171,7 +172,6 @@ public class BookingServiceImpl implements BookingService {
                 .contactEmail(booking.getContactEmail())
                 .scheduleIds(booking.getScheduleIds())
                 .passengers(passengers)
-                .status(booking.getStatus().name())
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
                 .build();
