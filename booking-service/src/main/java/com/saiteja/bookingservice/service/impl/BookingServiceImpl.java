@@ -59,7 +59,6 @@ public class BookingServiceImpl implements BookingService {
                         try {
                             flightServiceClient.releaseSeats(lockedScheduleId, seatNumbers);
                         } catch (Exception releaseEx) {
-                            // Log but don't throw - we're already in error state
                         }
                     }
                 }
