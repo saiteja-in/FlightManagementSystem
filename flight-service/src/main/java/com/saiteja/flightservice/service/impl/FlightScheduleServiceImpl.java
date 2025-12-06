@@ -47,11 +47,12 @@ public class FlightScheduleServiceImpl implements FlightScheduleService {
                 .status(FlightStatus.SCHEDULED)
                 .build();
 
-        flightScheduleRepository.save(schedule);
+        FlightSchedule savedSchedule = flightScheduleRepository.save(schedule);
 
         return ApiResponse.builder()
                 .message("Flight schedule created successfully for flight: " + flightNumber)
                 .status("CREATED")
+                .id(savedSchedule.getId())
                 .build();
     }
 
