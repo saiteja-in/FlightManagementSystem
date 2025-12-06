@@ -16,7 +16,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 @Service
@@ -67,10 +69,7 @@ public class FlightScheduleServiceImpl implements FlightScheduleService {
                         originUpper, destinationUpper, date
                 );
 
-        if (schedules.isEmpty()) {
-            throw new ResourceNotFoundException("No flights found for the given criteria");
-        }
-
+        // Return empty list instead of throwing exception - more RESTful
         return schedules.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -97,10 +96,18 @@ public class FlightScheduleServiceImpl implements FlightScheduleService {
                     schedule.getAvailableSeats() + ", Requested: " + seatsToBook);
         }
 
-        // Check for duplicate seat numbers
+        // Use Set for O(1) lookup performance
         List<String> bookedSeats = schedule.getBookedSeats();
+        Set<String> bookedSeatsSet = new HashSet<>(bookedSeats);
+        
+        // Check for duplicate seat numbers within request
+        Set<String> requestedSeatsSet = new HashSet<>(seatNumbers);
+        if (requestedSeatsSet.size() < seatNumbers.size()) {
+            throw new BadRequestException("Duplicate seat numbers in the request");
+        }
+        
         for (String seatNumber : seatNumbers) {
-            if (bookedSeats.contains(seatNumber)) {
+            if (bookedSeatsSet.contains(seatNumber)) {
                 throw new BadRequestException("Seat " + seatNumber + " is already booked");
             }
         }
@@ -119,10 +126,8 @@ public class FlightScheduleServiceImpl implements FlightScheduleService {
         int seatsToRelease = seatNumbers.size();
         List<String> bookedSeats = schedule.getBookedSeats();
 
-        if (bookedSeats != null) {
-            bookedSeats.removeIf(seatNumbers::contains);
-        }
-
+        // bookedSeats is always initialized (@Builder.Default), so null check is unnecessary
+        bookedSeats.removeIf(seatNumbers::contains);
         schedule.setAvailableSeats(schedule.getAvailableSeats() + seatsToRelease);
 
         flightScheduleRepository.save(schedule);

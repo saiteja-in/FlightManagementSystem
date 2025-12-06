@@ -5,7 +5,6 @@ import com.saiteja.bookingservice.dto.ApiResponse;
 import com.saiteja.bookingservice.dto.booking.BookingCreateRequest;
 import com.saiteja.bookingservice.dto.booking.BookingResponse;
 import com.saiteja.bookingservice.dto.passenger.PassengerResponse;
-import com.saiteja.bookingservice.dto.ticket.TicketResponse;
 import com.saiteja.bookingservice.exception.BadRequestException;
 import com.saiteja.bookingservice.exception.ResourceNotFoundException;
 import com.saiteja.bookingservice.model.Booking;
@@ -46,12 +45,25 @@ public class BookingServiceImpl implements BookingService {
 
         // Lock seats in flight-service for ALL scheduleIds
         List<String> seatNumbers = request.getPassengers().stream()
-                .map(p -> p.getSeatNumber())
+                .map(com.saiteja.bookingservice.dto.passenger.PassengerRequest::getSeatNumber)
                 .collect(Collectors.toList());
 
         for (String scheduleId : request.getScheduleIds()) {
             try {
                 flightServiceClient.lockSeats(scheduleId, seatNumbers);
+            } catch (BadRequestException e) {
+                // If locking fails for any schedule, release already locked seats
+                for (String lockedScheduleId : request.getScheduleIds()) {
+                    if (!lockedScheduleId.equals(scheduleId)) {
+                        try {
+                            flightServiceClient.releaseSeats(lockedScheduleId, seatNumbers);
+                        } catch (Exception releaseEx) {
+                            // Log but don't throw - we're already in error state
+                        }
+                    }
+                }
+                // Re-throw the BadRequestException with the user-friendly message
+                throw e;
             } catch (Exception e) {
                 // If locking fails for any schedule, release already locked seats
                 for (String lockedScheduleId : request.getScheduleIds()) {
@@ -59,6 +71,7 @@ public class BookingServiceImpl implements BookingService {
                         try {
                             flightServiceClient.releaseSeats(lockedScheduleId, seatNumbers);
                         } catch (Exception releaseEx) {
+                            // Log but don't throw - we're already in error state
                         }
                     }
                 }
@@ -128,12 +141,12 @@ public class BookingServiceImpl implements BookingService {
             }
         }
 
-        // Cancel all tickets for this booking
+        // Cancel all tickets for this booking - use batch save for better performance
         List<Ticket> tickets = ticketRepository.findByBookingId(booking.getId());
-        tickets.forEach(ticket -> {
-            ticket.setStatus(TicketStatus.CANCELLED);
-            ticketRepository.save(ticket);
-        });
+        if (!tickets.isEmpty()) {
+            tickets.forEach(ticket -> ticket.setStatus(TicketStatus.CANCELLED));
+            ticketRepository.saveAll(tickets);
+        }
 
         bookingRepository.save(booking);
 
@@ -177,12 +190,12 @@ public class BookingServiceImpl implements BookingService {
                 .build();
     }
 
-    //genereate unique pnr number
+    // Generate unique PNR number
     private String generateUniquePNR() {
         String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-        String pnr;
         int maxAttempts = 10;
         int attempts = 0;
+        String pnr;
 
         do {
             StringBuilder pnrBuilder = new StringBuilder();
@@ -192,12 +205,13 @@ public class BookingServiceImpl implements BookingService {
             }
             pnr = pnrBuilder.toString();
             attempts++;
-        } while (bookingRepository.existsByPnr(pnr) && attempts < maxAttempts);
+            
+            // Check if PNR exists only once per attempt
+            if (!bookingRepository.existsByPnr(pnr)) {
+                return pnr;
+            }
+        } while (attempts < maxAttempts);
 
-        if (bookingRepository.existsByPnr(pnr)) {
-            throw new BadRequestException("Failed to generate unique PNR. Please try again.");
-        }
-
-        return pnr;
+        throw new BadRequestException("Failed to generate unique PNR. Please try again.");
     }
 }

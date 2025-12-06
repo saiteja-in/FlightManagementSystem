@@ -35,7 +35,9 @@ public class TicketServiceImpl implements TicketService {
         }
 
         // Generate tickets for ALL scheduleIds in the booking
-        Ticket firstTicket = null;
+        LocalDateTime issuedAt = LocalDateTime.now();
+        List<Ticket> ticketsToSave = new java.util.ArrayList<>();
+        
         for (String scheduleId : booking.getScheduleIds()) {
             // Create a new list with copies of passengers to avoid shared collection reference
             List<com.saiteja.bookingservice.model.Passenger> ticketPassengers = booking.getPassengers().stream()
@@ -54,17 +56,17 @@ public class TicketServiceImpl implements TicketService {
                     .scheduleId(scheduleId)
                     .passengers(new java.util.ArrayList<>(ticketPassengers))
                     .status(TicketStatus.ACTIVE)
-                    .issuedAt(LocalDateTime.now())
+                    .issuedAt(issuedAt)
                     .build();
 
-            Ticket saved = ticketRepository.save(ticket);
-            if (firstTicket == null) {
-                firstTicket = saved;
-            }
+            ticketsToSave.add(ticket);
         }
 
+        // Batch save all tickets for better performance
+        List<Ticket> savedTickets = ticketRepository.saveAll(ticketsToSave);
+        
         // Return the first ticket (for backward compatibility)
-        return toResponse(firstTicket);
+        return toResponse(savedTickets.get(0));
     }
 
     @Override
