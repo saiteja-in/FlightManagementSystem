@@ -1,12 +1,14 @@
 package com.saiteja.apigateway.dto;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 import lombok.RequiredArgsConstructor;
 
 import java.util.List;
 
 @Data
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class JwtResponse {
     private String token;
     private String type = "Bearer";
@@ -14,4 +16,12 @@ public class JwtResponse {
     private String username;
     private String email;
     private List<String> roles;
+    public JwtResponse(String token, Long id, String username, String email, List<String> roles) {
+        this.token = token;
+        this.type = "Bearer";  // Default value
+        this.id = id;
+        this.username = username;
+        this.email = email;
+        this.roles = roles;
+    }
 }
