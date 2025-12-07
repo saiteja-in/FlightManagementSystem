@@ -1,4 +1,4 @@
-package com.saiteja.apigateway.dto;
+package com.saiteja.apigateway.dto.request;
 
 import jakarta.validation.constraints.NotBlank;
 
@@ -25,3 +25,4 @@ public class LoginRequest {
         this.password = password;
     }
 }
+

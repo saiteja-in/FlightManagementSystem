@@ -1,6 +1,5 @@
 package com.saiteja.apigateway.model;
 
-import com.saiteja.apigateway.model.enums.ERole;
 import jakarta.persistence.*;
 import lombok.AllArgsConstructor;
 import lombok.Data;

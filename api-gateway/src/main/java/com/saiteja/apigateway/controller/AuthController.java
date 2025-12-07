@@ -1,8 +1,8 @@
 package com.saiteja.apigateway.controller;
 
-import com.saiteja.apigateway.dto.LoginRequest;
-import com.saiteja.apigateway.dto.MessageResponse;
-import com.saiteja.apigateway.dto.SignUpRequest;
+import com.saiteja.apigateway.dto.request.LoginRequest;
+import com.saiteja.apigateway.dto.request.SignupRequest;
+import com.saiteja.apigateway.dto.response.MessageResponse;
 import com.saiteja.apigateway.service.AuthService;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -30,7 +30,7 @@ public class AuthController {
     }
 
     @PostMapping("/signup")
-    public Mono<ResponseEntity<?>> registerUser(@Valid @RequestBody SignUpRequest signUpRequest) {
+    public Mono<ResponseEntity<?>> registerUser(@Valid @RequestBody SignupRequest signUpRequest) {
         return authService.register(signUpRequest)
                 .map(messageResponse -> {
                     if (messageResponse.getMessage().contains("Error")) {
@@ -44,10 +44,5 @@ public class AuthController {
     public Mono<ResponseEntity<?>> logoutUser() {
         return Mono.just(ResponseEntity.ok(new MessageResponse("You've been signed out!")));
     }
-
-    @GetMapping("/health")
-    public String getHealth(){
-        return "Healthy";
-    }
-
 }
+

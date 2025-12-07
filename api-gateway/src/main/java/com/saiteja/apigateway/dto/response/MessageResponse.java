@@ -1,4 +1,4 @@
-package com.saiteja.apigateway.dto;
+package com.saiteja.apigateway.dto.response;
 
 public class MessageResponse {
     private String message;

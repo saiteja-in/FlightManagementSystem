@@ -1,12 +1,12 @@
 package com.saiteja.apigateway.service;
 
-import com.saiteja.apigateway.dto.JwtResponse;
-import com.saiteja.apigateway.dto.LoginRequest;
-import com.saiteja.apigateway.dto.MessageResponse;
-import com.saiteja.apigateway.dto.SignUpRequest;
+import com.saiteja.apigateway.dto.request.LoginRequest;
+import com.saiteja.apigateway.dto.request.SignupRequest;
+import com.saiteja.apigateway.dto.response.JwtResponse;
+import com.saiteja.apigateway.dto.response.MessageResponse;
+import com.saiteja.apigateway.model.ERole;
 import com.saiteja.apigateway.model.Role;
 import com.saiteja.apigateway.model.User;
-import com.saiteja.apigateway.model.enums.ERole;
 import com.saiteja.apigateway.repository.RoleRepository;
 import com.saiteja.apigateway.repository.UserRepository;
 import com.saiteja.apigateway.security.jwt.JwtUtils;
@@ -43,7 +43,7 @@ public class AuthService {
     @Autowired
     private ReactiveAuthenticationManager authenticationManager;
 
-    public Mono<MessageResponse> register(SignUpRequest signUpRequest) {
+    public Mono<MessageResponse> register(SignupRequest signUpRequest) {
         return Mono.fromCallable(() -> {
             if (userRepository.existsByUsername(signUpRequest.getUsername())) {
                 return new MessageResponse("Error: Username is already taken!");
@@ -53,7 +53,7 @@ public class AuthService {
                 return new MessageResponse("Error: Email is already in use!");
             }
 
-            // create new user account
+            // Create new user's account
             User user = new User(signUpRequest.getUsername(),
                     signUpRequest.getEmail(),
                     passwordEncoder.encode(signUpRequest.getPassword()));
@@ -108,3 +108,4 @@ public class AuthService {
                 });
     }
 }
+
