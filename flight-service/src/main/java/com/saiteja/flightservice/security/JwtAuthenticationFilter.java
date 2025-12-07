@@ -35,6 +35,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String username = jwtUtils.getUsernameFromJwtToken(jwt);
                 List<String> roles = jwtUtils.getRolesFromJwtToken(jwt);
                 
+                logger.debug("JWT validated for user: {}, roles: {}", username, roles);
+                
                 List<SimpleGrantedAuthority> authorities = roles.stream()
                         .map(SimpleGrantedAuthority::new)
                         .collect(Collectors.toList());
@@ -49,14 +51,25 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                     }
                 }
 
+                if (authorities.isEmpty()) {
+                    logger.warn("No authorities found for user: {}", username);
+                }
+
                 UsernamePasswordAuthenticationToken authentication = 
                         new UsernamePasswordAuthenticationToken(username, null, authorities);
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+                logger.debug("Authentication set for user: {} with authorities: {}", username, authorities);
+            } else {
+                if (jwt == null) {
+                    logger.debug("No JWT token found in request");
+                } else {
+                    logger.warn("JWT token validation failed");
+                }
             }
         } catch (Exception e) {
-            logger.error("Cannot set user authentication: {}", e);
+            logger.error("Cannot set user authentication: {}", e.getMessage(), e);
         }
 
         filterChain.doFilter(request, response);
