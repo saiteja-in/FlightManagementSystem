@@ -38,11 +38,12 @@ public class FlightServiceImpl implements FlightService {
                 .seatCapacity(request.getSeatCapacity())
                 .build();
 
-        flightRepository.save(flight);
+        Flight savedFlight = flightRepository.save(flight);
 
         return ApiResponse.builder()
                 .message("Flight created successfully with flight number: " + flightNumber)
                 .status("CREATED")
+                .id(savedFlight.getId())
                 .build();
     }
 

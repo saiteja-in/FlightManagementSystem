@@ -1,36 +1,16 @@
 package com.saiteja.apigateway.security.jwt;
 
-import com.saiteja.apigateway.security.services.ReactiveUserDetailsServiceImpl;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.cloud.gateway.filter.GatewayFilterChain;
 import org.springframework.cloud.gateway.filter.GlobalFilter;
 import org.springframework.core.Ordered;
 import org.springframework.http.server.reactive.ServerHttpRequest;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.authority.SimpleGrantedAuthority;
-import org.springframework.security.core.context.ReactiveSecurityContextHolder;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextImpl;
 import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 import org.springframework.web.server.ServerWebExchange;
 import reactor.core.publisher.Mono;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 @Component
 public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
-
-    private static final Logger logger = LoggerFactory.getLogger(JwtAuthenticationFilter.class);
-
-    @Autowired
-    private JwtUtils jwtUtils;
-
-    @Autowired
-    private ReactiveUserDetailsServiceImpl userDetailsService;
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
@@ -40,42 +20,30 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
         ServerHttpRequest request = exchange.getRequest();
         String path = request.getURI().getPath();
 
-        // Skip authentication for public endpoints
+        // Skip processing for public endpoints - just forward
         if (isPublicEndpoint(path)) {
             return chain.filter(exchange);
         }
 
         String jwt = parseJwt(request);
         
-        if (StringUtils.hasText(jwt) && jwtUtils.validateJwtToken(jwt)) {
-            String username = jwtUtils.getUserNameFromJwtToken(jwt);
+        // Always forward the Authorization header to downstream services if present
+        if (StringUtils.hasText(jwt)) {
+            ServerHttpRequest modifiedRequest = exchange.getRequest().mutate()
+                    .header(AUTHORIZATION_HEADER, BEARER_PREFIX + jwt)
+                    .build();
             
-            return userDetailsService.findByUsername(username)
-                    .flatMap(userDetails -> {
-                        List<SimpleGrantedAuthority> authorities = userDetails.getAuthorities().stream()
-                                .map(auth -> new SimpleGrantedAuthority(auth.getAuthority()))
-                                .collect(Collectors.toList());
-                        
-                        UsernamePasswordAuthenticationToken authentication = 
-                                new UsernamePasswordAuthenticationToken(userDetails, null, authorities);
-                        
-                        SecurityContext securityContext = new SecurityContextImpl(authentication);
-                        
-                        return chain.filter(exchange)
-                                .contextWrite(ReactiveSecurityContextHolder.withSecurityContext(Mono.just(securityContext)));
-                    })
-                    .onErrorResume(e -> {
-                        logger.error("Cannot set user authentication: {}", e.getMessage());
-                        // Let Spring Security handle unauthorized - just continue the chain
-                        return chain.filter(exchange);
-                    });
-        } else {
-            // No valid token - let Spring Security handle authorization
-            // It will check if the endpoint requires authentication
-            return chain.filter(exchange);
+            ServerWebExchange modifiedExchange = exchange.mutate()
+                    .request(modifiedRequest)
+                    .build();
+            
+            return chain.filter(modifiedExchange);
         }
+        
+        // No JWT token - forward as is (Spring Security will handle authorization)
+        return chain.filter(exchange);
     }
-
+    
     private String parseJwt(ServerHttpRequest request) {
         String bearerToken = request.getHeaders().getFirst(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
@@ -94,7 +62,8 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     @Override
     public int getOrder() {
-        return -100;
+        // Run before Spring Security filters
+        return -200;
     }
 }
 
