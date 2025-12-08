@@ -1,0 +1,135 @@
+version: "3.9"
+
+services:
+  eureka-server:
+    build: ./eureka-server
+    container_name: eureka-server
+    ports:
+      - "8761:8761"
+    environment:
+      - EUREKA_INSTANCE_HOSTNAME=eureka-server
+      - EUREKA_CLIENT_FETCH_REGISTRY=false
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
+      - SERVER_PORT=8761
+    networks:
+      - fms-net
+
+  postgres-flight:
+    image: postgres:15
+    container_name: postgres-flight
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=flight_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+    ports:
+      - "5433:5432"
+    volumes:
+      - pgdata-flight:/var/lib/postgresql/data
+    networks:
+      - fms-net
+
+  postgres-booking:
+    image: postgres:15
+    container_name: postgres-booking
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=booking_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata-booking:/var/lib/postgresql/data
+    networks:
+      - fms-net
+
+  postgres-gateway:
+    image: postgres:15
+    container_name: postgres-gateway
+    restart: unless-stopped
+    environment:
+      - POSTGRES_DB=api_gateway_db
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=root
+    ports:
+      - "5435:5432"
+    volumes:
+      - pgdata-gateway:/var/lib/postgresql/data
+    networks:
+      - fms-net
+
+  flight-service:
+    build: ./flight-service
+    container_name: flight-service
+    depends_on:
+      - eureka-server
+      - postgres-flight
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-flight:5432/flight_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - EUREKA_INSTANCE_HOSTNAME=flight-service
+      - SPRING_CLOUD_CONFIG_ENABLED=false
+      - SPRING_CLOUD_BOOTSTRAP_ENABLED=false
+      - SPRING_CLOUD_REFRESH_ENABLED=false
+      - SERVER_PORT=8080
+    ports:
+      - "8080:8080"
+    networks:
+      - fms-net
+
+  booking-service:
+    build: ./booking-service
+    container_name: booking-service
+    depends_on:
+      - eureka-server
+      - postgres-booking
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-booking:5432/booking_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - EUREKA_INSTANCE_HOSTNAME=booking-service
+      - SPRING_CLOUD_CONFIG_ENABLED=false
+      - SPRING_CLOUD_BOOTSTRAP_ENABLED=false
+      - SPRING_CLOUD_REFRESH_ENABLED=false
+      - SERVER_PORT=8081
+    ports:
+      - "8081:8081"
+    networks:
+      - fms-net
+
+  api-gateway:
+    build: ./api-gateway
+    container_name: api-gateway
+    depends_on:
+      - eureka-server
+      - flight-service
+      - booking-service
+      - postgres-gateway
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-gateway:5432/api_gateway_db
+      - SPRING_DATASOURCE_USERNAME=postgres
+      - SPRING_DATASOURCE_PASSWORD=root
+      - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - EUREKA_INSTANCE_HOSTNAME=api-gateway
+      - SPRING_CLOUD_CONFIG_ENABLED=false
+      - SPRING_CLOUD_BOOTSTRAP_ENABLED=false
+      - SPRING_CLOUD_REFRESH_ENABLED=false
+      - SERVER_PORT=8765
+    ports:
+      - "8765:8765"
+    networks:
+      - fms-net
+
+networks:
+  fms-net:
+    driver: bridge
+
+volumes:
+  pgdata-flight:
+  pgdata-booking:
+  pgdata-gateway:
+
