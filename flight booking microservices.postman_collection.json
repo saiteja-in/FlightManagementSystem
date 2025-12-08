@@ -1,0 +1,367 @@
+{
+	"info": {
+		"_postman_id": "d1fc1c8e-bd66-4fb4-801e-6d269b527df6",
+		"name": "flight booking microservices",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+		"_exporter_id": "33594479"
+	},
+	"item": [
+		{
+			"name": "create flight",
+			"request": {
+				"auth": {
+					"type": "bearer",
+					"bearer": [
+						{
+							"key": "token",
+							"value": "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJhZG1pbiIsInJvbGVzIjpbIlJPTEVfQURNSU4iXSwiaWF0IjoxNzY1MTI4OTk4LCJleHAiOjE3NjUyMTUzOTh9.eIapwYcboTP9t4RvQqcjJq4Kp3n8dTN0qf68xZ9eTak",
+							"type": "string"
+						}
+					]
+				},
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"flightNumber\": \"AI1313\",\r\n  \"airline\": \"AIR_INDIA\",\r\n  \"originAirport\": \"HYD\",\r\n  \"destinationAirport\": \"DEL\",\r\n  \"seatCapacity\": 3\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8765/api/v1.0/flight/admin/flights",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8765",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"admin",
+						"flights"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get all flights",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/v1.0/flight/admin/flights",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"admin",
+						"flights"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get flight by id",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/v1.0/flight/admin/flights/AI101",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"admin",
+						"flights",
+						"AI101"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete flight",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8081/api/v1.0/flight/admin/flights/692db335b8680d347ef254f1",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"admin",
+						"flights",
+						"692db335b8680d347ef254f1"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create flight schedule",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"flightNumber\": \"AI101\",\r\n  \"flightDate\": \"2025-12-25\",\r\n  \"departureTime\": \"10:00:00\",\r\n  \"arrivalTime\": \"12:30:00\",\r\n  \"fare\": 4500.00\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v1.0/flight/admin/inventory",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"admin",
+						"inventory"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "search flight schedule",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"originAirport\": \"HYD\",\r\n  \"destinationAirport\": \"DEL\",\r\n  \"flightDate\": \"2025-12-25\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8081/api/v1.0/flight/admin/search",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8081",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"admin",
+						"search"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "register user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"teja@gmail.com\",\r\n  \"password\": \"password123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/v1.0/auth/register",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1.0",
+						"auth",
+						"register"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "login user",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"email\": \"teja@gmail.com\",\r\n  \"password\": \"password123\"\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/v1.0/auth/login",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1.0",
+						"auth",
+						"login"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "create booking",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n  \"contactEmail\": \"teja@example.com\",\r\n  \"passengers\": [\r\n    {\r\n      \"fullName\": \"John Doe\",\r\n      \"gender\": \"MALE\",\r\n      \"age\": 30,\r\n      \"seatNumber\": \"1A\",\r\n      \"mealOption\": \"VEG\"\r\n    }\r\n  ]\r\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "http://localhost:8082/api/v1.0/flight/booking/692db4f9b8680d347ef254f9",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"booking",
+						"692db4f9b8680d347ef254f9"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get booking by pnr",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/api/v1.0/flight/ticket/47B4AE",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"ticket",
+						"47B4AE"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "delete booking",
+			"request": {
+				"method": "DELETE",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/api/v1.0/flight/booking/cancel/EE2906",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"booking",
+						"cancel",
+						"EE2906"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "get ticket from pnr",
+			"request": {
+				"method": "GET",
+				"header": [],
+				"url": {
+					"raw": "http://localhost:8082/api/v1.0/flight/ticket/47B4AE",
+					"protocol": "http",
+					"host": [
+						"localhost"
+					],
+					"port": "8082",
+					"path": [
+						"api",
+						"v1.0",
+						"flight",
+						"ticket",
+						"47B4AE"
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "booking-health",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		},
+		{
+			"name": "get booking from email",
+			"request": {
+				"method": "GET",
+				"header": []
+			},
+			"response": []
+		}
+	]
+}
