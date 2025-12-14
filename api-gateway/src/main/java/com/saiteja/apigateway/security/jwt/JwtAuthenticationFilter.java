@@ -14,6 +14,7 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
 
     private static final String AUTHORIZATION_HEADER = "Authorization";
     private static final String BEARER_PREFIX = "Bearer ";
+    private static final String JWT_COOKIE_NAME = "jwt";
 
     @Override
     public Mono<Void> filter(ServerWebExchange exchange, GatewayFilterChain chain) {
@@ -45,9 +46,27 @@ public class JwtAuthenticationFilter implements GlobalFilter, Ordered {
     }
     
     private String parseJwt(ServerHttpRequest request) {
+        // Try to get token from cookie first (preferred method)
+        String tokenFromCookie = getTokenFromCookie(request);
+        if (StringUtils.hasText(tokenFromCookie)) {
+            return tokenFromCookie;
+        }
+        
+        // Fallback to Authorization header (for backward compatibility)
         String bearerToken = request.getHeaders().getFirst(AUTHORIZATION_HEADER);
         if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
             return bearerToken.substring(BEARER_PREFIX.length());
+        }
+        
+        return null;
+    }
+    
+    private String getTokenFromCookie(ServerHttpRequest request) {
+        if (request.getCookies() != null && request.getCookies().containsKey(JWT_COOKIE_NAME)) {
+            var cookie = request.getCookies().getFirst(JWT_COOKIE_NAME);
+            if (cookie != null && StringUtils.hasText(cookie.getValue())) {
+                return cookie.getValue();
+            }
         }
         return null;
     }
