@@ -1,6 +1,6 @@
 # Flight Management System (Docker)
 
-# From repo root
+## From repo root
 docker compose up
 - Eureka: http://localhost:8761
 - API Gateway: http://localhost:8765
@@ -10,6 +10,8 @@ Databases:
 - flight DB: localhost:5433/flight_db (postgres/postgres:root)
 - booking DB: localhost:5434/booking_db
 - gateway DB: localhost:5435/api_gateway_db
+
+<img width="1026" height="1245" alt="new" src="https://github.com/user-attachments/assets/0f0bd8b0-76cf-40f7-abcb-4c876375b9eb" />
 
 ## Endpoints (via Gateway)
 Base: `http://localhost:8765`
