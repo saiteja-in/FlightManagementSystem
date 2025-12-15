@@ -31,8 +31,8 @@ public class FlightScheduleController {
     @PostMapping("/search")
     public ResponseEntity<List<FlightScheduleResponse>> searchFlights(@Valid @RequestBody FlightSearchRequest request) {
         List<FlightScheduleResponse> schedules = flightScheduleService.searchFlights(
-                request.getOriginAirport().trim().toUpperCase(),
-                request.getDestinationAirport().trim().toUpperCase(),
+                request.getOriginAirport(),
+                request.getDestinationAirport(),
                 request.getFlightDate()
         );
         return ResponseEntity.ok(schedules);

@@ -1,5 +1,6 @@
 package com.saiteja.flightservice.dto;
 
+import com.saiteja.flightservice.model.enums.Airport;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -18,8 +19,8 @@ public class FlightScheduleResponse {
     private String flightId;
     private String flightNumber;
     private String airline;
-    private String originAirport;
-    private String destinationAirport;
+    private Airport originAirport;
+    private Airport destinationAirport;
     private LocalDate flightDate;
     private LocalTime departureTime;
     private LocalTime arrivalTime;

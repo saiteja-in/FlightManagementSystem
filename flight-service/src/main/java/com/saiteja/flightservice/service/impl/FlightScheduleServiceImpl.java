@@ -7,6 +7,7 @@ import com.saiteja.flightservice.exception.BadRequestException;
 import com.saiteja.flightservice.exception.ResourceNotFoundException;
 import com.saiteja.flightservice.model.Flight;
 import com.saiteja.flightservice.model.FlightSchedule;
+import com.saiteja.flightservice.model.enums.Airport;
 import com.saiteja.flightservice.model.enums.FlightStatus;
 import com.saiteja.flightservice.repository.FlightRepository;
 import com.saiteja.flightservice.repository.FlightScheduleRepository;
@@ -60,13 +61,10 @@ public class FlightScheduleServiceImpl implements FlightScheduleService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<FlightScheduleResponse> searchFlights(String origin, String destination, LocalDate date) {
-        String originUpper = origin.trim().toUpperCase();
-        String destinationUpper = destination.trim().toUpperCase();
-
+    public List<FlightScheduleResponse> searchFlights(Airport origin, Airport destination, LocalDate date) {
         List<FlightSchedule> schedules = flightScheduleRepository
                 .findByFlightOriginAirportAndFlightDestinationAirportAndFlightDate(
-                        originUpper, destinationUpper, date
+                        origin, destination, date
                 );
 
         // Return empty list instead of throwing exception - more RESTful

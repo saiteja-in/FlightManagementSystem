@@ -1,6 +1,7 @@
 package com.saiteja.flightservice.dto;
 
 import com.saiteja.flightservice.model.enums.Airline;
+import com.saiteja.flightservice.model.enums.Airport;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -14,8 +15,8 @@ public class FlightResponse {
     private String id;
     private String flightNumber;
     private Airline airline;
-    private String originAirport;
-    private String destinationAirport;
+    private Airport originAirport;
+    private Airport destinationAirport;
     private Integer seatCapacity;
 }
 

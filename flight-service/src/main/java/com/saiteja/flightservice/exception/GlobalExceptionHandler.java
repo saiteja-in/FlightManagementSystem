@@ -1,15 +1,20 @@
 package com.saiteja.flightservice.exception;
 
+import com.saiteja.flightservice.model.enums.Airport;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
+import org.springframework.web.method.annotation.MethodArgumentTypeMismatchException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
@@ -60,6 +65,29 @@ public class GlobalExceptionHandler {
         response.put("timestamp", LocalDateTime.now());
 
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(response);
+    }
+
+    @ExceptionHandler({MethodArgumentTypeMismatchException.class, HttpMessageNotReadableException.class, IllegalArgumentException.class})
+    public ResponseEntity<ErrorResponse> handleConversionExceptions(Exception ex) {
+        String allowedAirports = Stream.of(Airport.values())
+                .map(Airport::name)
+                .collect(Collectors.joining(", "));
+
+        String message = ex.getMessage();
+        if (ex instanceof MethodArgumentTypeMismatchException mismatch && mismatch.getName() != null) {
+            message = "Invalid value for " + mismatch.getName() + ". Allowed airport codes: " + allowedAirports;
+        } else if (ex instanceof HttpMessageNotReadableException && ex.getCause() != null) {
+            message = ex.getCause().getMessage();
+        } else if (message == null || message.isBlank()) {
+            message = "Invalid request data";
+        }
+
+        ErrorResponse error = ErrorResponse.builder()
+                .message(message)
+                .status(HttpStatus.BAD_REQUEST.name())
+                .timestamp(LocalDateTime.now())
+                .build();
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(error);
     }
 
     @ExceptionHandler(Exception.class)

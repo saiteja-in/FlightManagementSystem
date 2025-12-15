@@ -2,6 +2,7 @@ package com.saiteja.flightservice.repository;
 
 import com.saiteja.flightservice.model.Flight;
 import com.saiteja.flightservice.model.FlightSchedule;
+import com.saiteja.flightservice.model.enums.Airport;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
@@ -17,8 +18,8 @@ public interface FlightScheduleRepository extends JpaRepository<FlightSchedule, 
     Optional<FlightSchedule> findById(String id);
 
     List<FlightSchedule> findByFlightOriginAirportAndFlightDestinationAirportAndFlightDate(
-            String originAirport,
-            String destinationAirport,
+            Airport originAirport,
+            Airport destinationAirport,
             LocalDate flightDate
     );
 }

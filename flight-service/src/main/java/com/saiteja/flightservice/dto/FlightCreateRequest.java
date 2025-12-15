@@ -1,6 +1,7 @@
 package com.saiteja.flightservice.dto;
 
 import com.saiteja.flightservice.model.enums.Airline;
+import com.saiteja.flightservice.model.enums.Airport;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 
@@ -13,11 +14,11 @@ public class FlightCreateRequest {
     @NotNull(message = "Airline is required")
     private Airline airline;
 
-    @NotBlank(message = "Origin airport is required")
-    private String originAirport;
+    @NotNull(message = "Origin airport is required")
+    private Airport originAirport;
 
-    @NotBlank(message = "Destination airport is required")
-    private String destinationAirport;
+    @NotNull(message = "Destination airport is required")
+    private Airport destinationAirport;
 
     @NotNull(message = "Seat capacity is required")
     @Min(value = 1, message = "Seat capacity must be at least 1")

@@ -1,6 +1,6 @@
 package com.saiteja.flightservice.dto;
 
-import jakarta.validation.constraints.NotBlank;
+import com.saiteja.flightservice.model.enums.Airport;
 import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
@@ -9,11 +9,11 @@ import java.time.LocalDate;
 @Data
 public class FlightSearchRequest {
 
-    @NotBlank(message = "Origin airport is required")
-    private String originAirport;
+    @NotNull(message = "Origin airport is required")
+    private Airport originAirport;
 
-    @NotBlank(message = "Destination airport is required")
-    private String destinationAirport;
+    @NotNull(message = "Destination airport is required")
+    private Airport destinationAirport;
 
     @NotNull(message = "Flight date is required")
     private LocalDate flightDate;

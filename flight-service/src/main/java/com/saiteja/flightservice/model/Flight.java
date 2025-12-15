@@ -1,6 +1,7 @@
 package com.saiteja.flightservice.model;
 
 import com.saiteja.flightservice.model.enums.Airline;
+import com.saiteja.flightservice.model.enums.Airport;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -38,13 +39,15 @@ public class Flight {
     @Column(name = "airline", nullable = false, length = 20)
     private Airline airline;
 
-    @NotBlank(message = "origin airport is required")
-    @Column(name = "origin_airport", nullable = false, length = 20)
-    private String originAirport;
+    @NotNull(message = "origin airport is required")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "origin_airport", nullable = false, length = 10)
+    private Airport originAirport;
 
-    @NotBlank(message = "destination airport is required")
-    @Column(name = "destination_airport", nullable = false, length = 20)
-    private String destinationAirport;
+    @NotNull(message = "destination airport is required")
+    @Enumerated(EnumType.STRING)
+    @Column(name = "destination_airport", nullable = false, length = 10)
+    private Airport destinationAirport;
 
     @NotNull(message = "seat capacity is required")
     @Min(value = 1, message = "Seat capacity must be at least 1")
