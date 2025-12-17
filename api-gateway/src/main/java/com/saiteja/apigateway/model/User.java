@@ -41,6 +41,14 @@ public class User {
     @Column(nullable = false, length = 120)
     private String password;
 
+    @Size(max = 20)
+    @Column(nullable = true, length = 20)
+    private String provider; // google or local
+
+    @Size(max = 100)
+    @Column(nullable = true, length = 100)
+    private String providerId; // OAuth provider's user ID
+
     @ManyToMany(fetch = FetchType.LAZY)
     @JoinTable(name = "user_roles",
                joinColumns = @JoinColumn(name = "user_id"),
@@ -51,6 +59,15 @@ public class User {
         this.username = username;
         this.email = email;
         this.password = password;
+        this.provider = "local";
+    }
+
+    public User(String username, String email, String password, String provider, String providerId) {
+        this.username = username;
+        this.email = email;
+        this.password = password;
+        this.provider = provider;
+        this.providerId = providerId;
     }
 }
 

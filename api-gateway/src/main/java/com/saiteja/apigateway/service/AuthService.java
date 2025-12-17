@@ -20,6 +20,7 @@ import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
+import java.security.SecureRandom;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -106,6 +107,86 @@ public class AuthService {
                             userDetails.getEmail(),
                             roles));
                 });
+    }
+
+    public Mono<JwtResponse> processOAuth2User(String email, String name, String provider, String providerId) {
+        return Mono.fromCallable(() -> {
+            // Check if user exists by email
+            User user = userRepository.findByEmail(email).orElse(null);
+            
+            if (user == null) {
+                // Create new OAuth2 user
+                String username = generateUsernameFromEmail(email);
+                // Ensure username is unique
+                int counter = 1;
+                String baseUsername = username;
+                while (userRepository.existsByUsername(username)) {
+                    username = baseUsername + counter;
+                    counter++;
+                }
+                
+                // Generate a secure dummy password for OAuth users
+                String dummyPassword = generateSecureDummyPassword();
+                String encodedPassword = passwordEncoder.encode(dummyPassword);
+                
+                user = new User(username, email, encodedPassword, provider, providerId);
+                
+                // Assign default role
+                Role userRole = roleRepository.findByName(ERole.ROLE_USER)
+                        .orElseThrow(() -> new RuntimeException("Error: Role is not found."));
+                user.setRoles(Set.of(userRole));
+                
+                user = userRepository.save(user);
+            } else {
+                // Update existing user with OAuth2 provider info if not set
+                if (user.getProvider() == null || user.getProvider().isEmpty()) {
+                    user.setProvider(provider);
+                    user.setProviderId(providerId);
+                    // If password is null or empty, generate a dummy password
+                    if (user.getPassword() == null || user.getPassword().isEmpty()) {
+                        String dummyPassword = generateSecureDummyPassword();
+                        user.setPassword(passwordEncoder.encode(dummyPassword));
+                    }
+                    user = userRepository.save(user);
+                }
+            }
+            
+            // Generate JWT token
+            UserDetailsImpl userDetails = UserDetailsImpl.build(user);
+            String jwt = jwtUtils.generateTokenFromUserDetails(userDetails);
+            List<String> roles = userDetails.getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .collect(Collectors.toList());
+            
+            return new JwtResponse(jwt,
+                    userDetails.getId(),
+                    userDetails.getUsername(),
+                    userDetails.getEmail(),
+                    roles);
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private String generateUsernameFromEmail(String email) {
+        // Extract username from email (part before @)
+        String username = email.split("@")[0];
+        // Remove special characters and limit length
+        username = username.replaceAll("[^a-zA-Z0-9]", "");
+        if (username.length() > 20) {
+            username = username.substring(0, 20);
+        }
+        return username.toLowerCase();
+    }
+
+    private String generateSecureDummyPassword() {
+        // Generate a secure random password for OAuth users
+        // This password will never be used for authentication, but is required by the database
+        SecureRandom random = new SecureRandom();
+        String chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*";
+        StringBuilder password = new StringBuilder(32);
+        for (int i = 0; i < 32; i++) {
+            password.append(chars.charAt(random.nextInt(chars.length())));
+        }
+        return password.toString();
     }
 }
 
