@@ -4,6 +4,7 @@ import com.saiteja.apigateway.dto.request.GoogleTokenRequest;
 import com.saiteja.apigateway.dto.request.LoginRequest;
 import com.saiteja.apigateway.dto.request.SignupRequest;
 import com.saiteja.apigateway.dto.response.MessageResponse;
+import com.saiteja.apigateway.security.jwt.JwtUtils;
 import com.saiteja.apigateway.service.AuthService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -11,19 +12,22 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.server.reactive.ServerHttpRequest;
+import org.springframework.util.StringUtils;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Mono;
 
 import java.time.Duration;
 import java.util.Base64;
 
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true", maxAge = 3600)
+// @CrossOrigin removed - CORS is handled by Spring Cloud Gateway configuration
 @RestController
 @RequestMapping("/api/v1.0/auth")
 @RequiredArgsConstructor
 public class AuthController {
 
     private final AuthService authService;
+    private final JwtUtils jwtUtils;
     private static final String JWT_COOKIE_NAME = "jwt";
     private static final int COOKIE_MAX_AGE_DAYS = 7;
 
@@ -75,6 +79,37 @@ public class AuthController {
         return Mono.just(ResponseEntity.ok()
                 .header(HttpHeaders.SET_COOKIE, cookie.toString())
                 .body(new MessageResponse("You've been signed out!")));
+    }
+
+    @GetMapping("/validate")
+    public Mono<ResponseEntity<?>> validateToken(ServerHttpRequest request) {
+        // Extract token from cookie
+        String token = getTokenFromCookie(request);
+        
+        if (!StringUtils.hasText(token)) {
+            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("No token found")));
+        }
+        
+        // Validate token
+        if (!jwtUtils.validateJwtToken(token)) {
+            return Mono.just(ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                    .body(new MessageResponse("Invalid or expired token")));
+        }
+        
+        // Token is valid
+        return Mono.just(ResponseEntity.ok()
+                .body(new MessageResponse("Token is valid")));
+    }
+
+    private String getTokenFromCookie(ServerHttpRequest request) {
+        if (request.getCookies() != null && request.getCookies().containsKey(JWT_COOKIE_NAME)) {
+            var cookie = request.getCookies().getFirst(JWT_COOKIE_NAME);
+            if (cookie != null && StringUtils.hasText(cookie.getValue())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     @PostMapping("/oauth/google")
