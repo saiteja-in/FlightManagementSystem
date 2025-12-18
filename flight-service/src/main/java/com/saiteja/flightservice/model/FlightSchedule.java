@@ -63,6 +63,9 @@ public class FlightSchedule {
     @Builder.Default
     private List<String> bookedSeats = new ArrayList<>();
 
+    @Column(name = "created_by_user_id", nullable = true)
+    private Long createdByUserId;
+
     @CreatedDate
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;

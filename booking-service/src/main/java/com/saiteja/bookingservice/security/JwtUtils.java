@@ -40,6 +40,18 @@ public class JwtUtils {
         return List.of();
     }
 
+    public Long getUserIdFromJwtToken(String token) {
+        Claims claims = Jwts.parserBuilder().setSigningKey(key()).build()
+                .parseClaimsJws(token).getBody();
+        
+        Object userIdObj = claims.get("userId");
+        if (userIdObj instanceof Number) {
+            return ((Number) userIdObj).longValue();
+        }
+        
+        return null;
+    }
+
     public boolean validateJwtToken(String authToken) {
         try {
             Jwts.parserBuilder().setSigningKey(key()).build().parse(authToken);

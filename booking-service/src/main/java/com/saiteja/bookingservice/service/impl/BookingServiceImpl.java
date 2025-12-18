@@ -34,7 +34,11 @@ public class BookingServiceImpl implements BookingService {
     private final FlightServiceClient flightServiceClient;
 
     @Override
-    public String createBooking(BookingCreateRequest request) {
+    public String createBooking(BookingCreateRequest request, Long userId) {
+        if (userId == null) {
+            throw new BadRequestException("User ID is required");
+        }
+
         if (request.getScheduleIds() == null || request.getScheduleIds().isEmpty()) {
             throw new BadRequestException("At least one schedule id is required");
         }
@@ -86,6 +90,7 @@ public class BookingServiceImpl implements BookingService {
         Booking booking = Booking.builder()
                 .pnr(pnr)
                 .contactEmail(request.getContactEmail().trim().toLowerCase())
+                .userId(userId)
                 .scheduleIds(request.getScheduleIds())
                 .passengers(mapPassengers(request))
                 .status(BookingStatus.CONFIRMED)
@@ -100,26 +105,38 @@ public class BookingServiceImpl implements BookingService {
 
     @Override
     @Transactional(readOnly = true)
-    public BookingResponse getBookingByPnr(String pnr) {
-        Booking booking = bookingRepository.findByPnr(pnr)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with PNR: " + pnr));
+    public BookingResponse getBookingByPnr(String pnr, Long userId) {
+        if (userId == null) {
+            throw new BadRequestException("User ID is required");
+        }
+
+        Booking booking = bookingRepository.findByPnrAndUserId(pnr, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with PNR: " + pnr + " for the current user"));
 
         return toResponse(booking);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<BookingResponse> getBookingsByEmail(String email) {
-        List<Booking> bookings = bookingRepository.findByContactEmail(email.trim().toLowerCase());
+    public List<BookingResponse> getBookingsByUserId(Long userId) {
+        if (userId == null) {
+            throw new BadRequestException("User ID is required");
+        }
+
+        List<Booking> bookings = bookingRepository.findByUserId(userId);
         return bookings.stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
     }
 
     @Override
-    public ApiResponse cancelBooking(String pnr) {
-        Booking booking = bookingRepository.findByPnr(pnr)
-                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with PNR: " + pnr));
+    public ApiResponse cancelBooking(String pnr, Long userId) {
+        if (userId == null) {
+            throw new BadRequestException("User ID is required");
+        }
+
+        Booking booking = bookingRepository.findByPnrAndUserId(pnr, userId)
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found with PNR: " + pnr + " for the current user"));
 
         if (booking.getStatus() == BookingStatus.CANCELLED) {
             throw new BadRequestException("Booking already cancelled");

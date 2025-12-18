@@ -2,8 +2,10 @@ package com.saiteja.apigateway.security;
 
 import com.saiteja.apigateway.security.jwt.JwtAuthenticationConverter;
 import com.saiteja.apigateway.security.jwt.ReactiveAuthenticationEntryPoint;
+import com.saiteja.apigateway.security.oauth2.OAuth2AuthenticationSuccessHandler;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UserDetailsRepositoryReactiveAuthenticationManager;
 import org.springframework.security.config.annotation.method.configuration.EnableReactiveMethodSecurity;
@@ -33,13 +35,16 @@ public class WebSecurityConfig {
     private final ReactiveAuthenticationEntryPoint unauthorizedHandler;
     private final JwtAuthenticationConverter jwtAuthenticationConverter;
     private final ReactiveUserDetailsService userDetailsService;
+    private final OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler;
 
     public WebSecurityConfig(ReactiveAuthenticationEntryPoint unauthorizedHandler,
                             JwtAuthenticationConverter jwtAuthenticationConverter,
-                            ReactiveUserDetailsService userDetailsService) {
+                            ReactiveUserDetailsService userDetailsService,
+                            @Lazy OAuth2AuthenticationSuccessHandler oauth2AuthenticationSuccessHandler) {
         this.unauthorizedHandler = unauthorizedHandler;
         this.jwtAuthenticationConverter = jwtAuthenticationConverter;
         this.userDetailsService = userDetailsService;
+        this.oauth2AuthenticationSuccessHandler = oauth2AuthenticationSuccessHandler;
     }
 
     @Bean
@@ -96,6 +101,8 @@ public class WebSecurityConfig {
                         .pathMatchers("/health").permitAll()
                         .pathMatchers("/api/v1.0/flight/admin/internal/**").permitAll()
                         .pathMatchers("/api/v1.0/flight/admin/search").permitAll()
+                        // OAuth2 endpoints
+                        .pathMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         // Protected endpoints - require authentication with specific roles
                         .pathMatchers("/api/v1.0/flight/admin/flights/**").hasAnyAuthority("ROLE_ADMIN")
                         .pathMatchers("/api/v1.0/flight/admin/inventory").hasAnyAuthority("ROLE_ADMIN")
@@ -104,6 +111,9 @@ public class WebSecurityConfig {
                         .pathMatchers("/api/v1.0/flight/bookings/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                         // Allow all other requests to proceed (gateway will handle routing)
                         .anyExchange().permitAll()
+                )
+                .oauth2Login(oauth2 -> oauth2
+                        .authenticationSuccessHandler(oauth2AuthenticationSuccessHandler)
                 )
                 .addFilterBefore(jwtAuthenticationFilter, SecurityWebFiltersOrder.AUTHENTICATION)
                 .securityContextRepository(NoOpServerSecurityContextRepository.getInstance())

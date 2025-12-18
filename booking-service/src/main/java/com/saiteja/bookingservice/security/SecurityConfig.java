@@ -29,8 +29,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/v1.0/flight/health").permitAll()
                         .requestMatchers("/api/v1.0/flight/booking/**").hasAnyRole("USER", "ADMIN")
+                        .requestMatchers("/api/v1.0/flight/bookings").hasAnyRole("USER", "ADMIN")
                         .requestMatchers("/api/v1.0/flight/ticket/**").hasAnyRole("USER", "ADMIN")
-                        .requestMatchers("/api/v1.0/flight/bookings/**").hasAnyRole("USER", "ADMIN")
                         .anyRequest().authenticated()
                 );
 

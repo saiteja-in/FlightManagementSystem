@@ -7,9 +7,9 @@ import com.saiteja.bookingservice.dto.booking.BookingResponse;
 import java.util.List;
 
 public interface BookingService {
-    String createBooking(BookingCreateRequest request);
-    BookingResponse getBookingByPnr(String pnr);
-    List<BookingResponse> getBookingsByEmail(String email);
-    ApiResponse cancelBooking(String pnr);
+    String createBooking(BookingCreateRequest request, Long userId);
+    BookingResponse getBookingByPnr(String pnr, Long userId);
+    List<BookingResponse> getBookingsByUserId(Long userId);
+    ApiResponse cancelBooking(String pnr, Long userId);
 }
 

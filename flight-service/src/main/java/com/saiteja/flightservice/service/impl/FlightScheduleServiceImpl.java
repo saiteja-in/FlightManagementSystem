@@ -31,7 +31,7 @@ public class FlightScheduleServiceImpl implements FlightScheduleService {
     private final FlightRepository flightRepository;
 
     @Override
-    public ApiResponse createSchedule(FlightScheduleCreateRequest request) {
+    public ApiResponse createSchedule(FlightScheduleCreateRequest request, Long createdByUserId) {
         String flightNumber = request.getFlightNumber().trim().toUpperCase();
 
         Flight flight = flightRepository.findByFlightNumber(flightNumber)
@@ -48,6 +48,7 @@ public class FlightScheduleServiceImpl implements FlightScheduleService {
                 .totalSeats(flight.getSeatCapacity())
                 .availableSeats(flight.getSeatCapacity())
                 .status(FlightStatus.SCHEDULED)
+                .createdByUserId(createdByUserId)
                 .build();
 
         FlightSchedule savedSchedule = flightScheduleRepository.save(schedule);
