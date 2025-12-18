@@ -50,6 +50,9 @@ public class Booking {
     @Column(name = "contact_email", nullable = false, length = 100)
     private String contactEmail;
 
+    @Column(name = "user_id", nullable = false)
+    private Long userId;
+
     @ElementCollection(fetch = FetchType.LAZY)
     @CollectionTable(name = "booking_passengers", joinColumns = @JoinColumn(name = "booking_id"))
     @NotEmpty(message = "At least one passenger is required")
