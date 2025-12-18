@@ -24,13 +24,11 @@ public class JwtAuthenticationConverter implements ServerAuthenticationConverter
 
     @Override
     public Mono<Authentication> convert(ServerWebExchange exchange) {
-        String authHeader = exchange.getRequest().getHeaders().getFirst(AUTHORIZATION_HEADER);
+        String jwt = parseJwt(exchange.getRequest());
         
-        if (!StringUtils.hasText(authHeader) || !authHeader.startsWith(BEARER_PREFIX)) {
+        if (!StringUtils.hasText(jwt)) {
             return Mono.empty();
         }
-
-        String jwt = authHeader.substring(BEARER_PREFIX.length());
         
         if (!jwtUtils.validateJwtToken(jwt)) {
             return Mono.empty();
@@ -44,6 +42,33 @@ public class JwtAuthenticationConverter implements ServerAuthenticationConverter
         } catch (Exception e) {
             return Mono.empty();
         }
+    }
+
+    private String parseJwt(org.springframework.http.server.reactive.ServerHttpRequest request) {
+        // Try to get token from cookie first (preferred method)
+        String tokenFromCookie = getTokenFromCookie(request);
+        if (StringUtils.hasText(tokenFromCookie)) {
+            return tokenFromCookie;
+        }
+        
+        // Fallback to Authorization header (for backward compatibility)
+        String bearerToken = request.getHeaders().getFirst(AUTHORIZATION_HEADER);
+        if (StringUtils.hasText(bearerToken) && bearerToken.startsWith(BEARER_PREFIX)) {
+            return bearerToken.substring(BEARER_PREFIX.length());
+        }
+        
+        return null;
+    }
+
+    private String getTokenFromCookie(org.springframework.http.server.reactive.ServerHttpRequest request) {
+        String JWT_COOKIE_NAME = "jwt";
+        if (request.getCookies() != null && request.getCookies().containsKey(JWT_COOKIE_NAME)) {
+            var cookie = request.getCookies().getFirst(JWT_COOKIE_NAME);
+            if (cookie != null && StringUtils.hasText(cookie.getValue())) {
+                return cookie.getValue();
+            }
+        }
+        return null;
     }
 
     @SuppressWarnings("unchecked")
