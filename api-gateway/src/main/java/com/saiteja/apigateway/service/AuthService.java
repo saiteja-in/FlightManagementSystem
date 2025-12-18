@@ -116,7 +116,7 @@ public class AuthService {
             
             if (user == null) {
                 // Create new OAuth2 user
-                String username = generateUsernameFromEmail(email);
+                String username = generateUsernameFromName(name, email);
                 // Ensure username is unique
                 int counter = 1;
                 String baseUsername = username;
@@ -166,15 +166,46 @@ public class AuthService {
         }).subscribeOn(Schedulers.boundedElastic());
     }
 
-    private String generateUsernameFromEmail(String email) {
-        // Extract username from email (part before @)
-        String username = email.split("@")[0];
-        // Remove special characters and limit length
-        username = username.replaceAll("[^a-zA-Z0-9]", "");
+    private String generateUsernameFromName(String name, String email) {
+        String username;
+        
+        // If name is null or empty, fallback to email-based generation
+        if (name == null || name.trim().isEmpty()) {
+            // Extract username from email (part before @)
+            username = email.split("@")[0];
+            // Remove special characters and limit length
+            username = username.replaceAll("[^a-zA-Z0-9]", "");
+        } else {
+            // Generate username from name
+            // Convert to lowercase
+            username = name.toLowerCase();
+            // Replace spaces with hyphens
+            username = username.replaceAll("\\s+", "-");
+            // Remove special characters (keep only alphanumeric and hyphens)
+            username = username.replaceAll("[^a-zA-Z0-9-]", "");
+            // Remove consecutive hyphens
+            username = username.replaceAll("-+", "-");
+            // Remove leading/trailing hyphens
+            username = username.replaceAll("^-+|-+$", "");
+        }
+        
+        // Limit to 20 characters
         if (username.length() > 20) {
             username = username.substring(0, 20);
+            // Remove trailing hyphen if truncated at hyphen
+            username = username.replaceAll("-+$", "");
         }
-        return username.toLowerCase();
+        
+        // Ensure username is not empty (fallback to "user" if empty)
+        if (username.isEmpty()) {
+            username = email != null && !email.isEmpty() ? email.split("@")[0] : "user";
+            username = username.replaceAll("[^a-zA-Z0-9]", "").toLowerCase();
+            if (username.length() > 20) {
+                username = username.substring(0, 20);
+            }
+        }
+        
+        return username;
     }
 
     private String generateSecureDummyPassword() {
