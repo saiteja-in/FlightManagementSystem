@@ -200,6 +200,7 @@ public class BookingServiceImpl implements BookingService {
                 .bookingId(booking.getId())
                 .pnr(booking.getPnr())
                 .contactEmail(booking.getContactEmail())
+                .userId(booking.getUserId())
                 .scheduleIds(booking.getScheduleIds())
                 .passengers(passengers)
                 .createdAt(booking.getCreatedAt())
