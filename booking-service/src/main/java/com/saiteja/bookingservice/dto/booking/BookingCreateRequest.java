@@ -14,7 +14,7 @@ public class BookingCreateRequest {
     @NotBlank(message = "Contact email is required")
     @Email(message = "Invalid email format")
     private String contactEmail;
-    @NotBlank(message = "Schedule ID is required")
+    // scheduleId is provided via path variable, not request body, so no validation annotation here
     private String scheduleId;
     @NotEmpty(message = "At least one passenger is required")
     private List<@Valid PassengerRequest> passengers;
