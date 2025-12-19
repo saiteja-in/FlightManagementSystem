@@ -2,6 +2,7 @@ package com.saiteja.bookingservice.service.impl;
 
 import com.saiteja.bookingservice.dto.passenger.PassengerResponse;
 import com.saiteja.bookingservice.dto.ticket.TicketResponse;
+import com.saiteja.bookingservice.exception.BadRequestException;
 import com.saiteja.bookingservice.exception.ResourceNotFoundException;
 import com.saiteja.bookingservice.model.Booking;
 import com.saiteja.bookingservice.model.Ticket;
@@ -80,6 +81,31 @@ public class TicketServiceImpl implements TicketService {
         }
 
         return toResponse(ticket);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public TicketResponse getTicketById(String ticketId, Long userId) {
+        Ticket ticket = ticketRepository.findById(ticketId)
+                .orElseThrow(() -> new ResourceNotFoundException("Ticket not found"));
+
+        if (ticket.getStatus() == TicketStatus.CANCELLED) {
+            throw new BadRequestException("Ticket has been cancelled");
+        }
+
+        // Validate user owns the booking
+        validateUserOwnsTicket(ticket, userId);
+
+        return toResponse(ticket);
+    }
+
+    private void validateUserOwnsTicket(Ticket ticket, Long userId) {
+        Booking booking = bookingRepository.findById(ticket.getBookingId())
+                .orElseThrow(() -> new ResourceNotFoundException("Booking not found for ticket"));
+
+        if (!booking.getUserId().equals(userId)) {
+            throw new ResourceNotFoundException("Ticket not found");
+        }
     }
 
     private TicketResponse toResponse(Ticket ticket) {

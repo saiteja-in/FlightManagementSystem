@@ -196,11 +196,20 @@ public class BookingServiceImpl implements BookingService {
                         .build())
                 .collect(Collectors.toList());
 
+        // Get ticketId for this booking (since one booking = one scheduleId = one ticket)
+        String ticketId = null;
+        List<Ticket> tickets = ticketRepository.findByBookingId(booking.getId());
+        if (!tickets.isEmpty()) {
+            // Get the first ticket (should be only one)
+            ticketId = tickets.get(0).getId();
+        }
+
         return BookingResponse.builder()
                 .bookingId(booking.getId())
                 .pnr(booking.getPnr())
                 .contactEmail(booking.getContactEmail())
                 .userId(booking.getUserId())
+                .ticketId(ticketId)
                 .scheduleIds(booking.getScheduleIds())
                 .passengers(passengers)
                 .createdAt(booking.getCreatedAt())

@@ -87,7 +87,7 @@ public class WebSecurityConfig {
                 "/api/v1.0/flight/admin/flights/**",
                 "/api/v1.0/flight/admin/inventory",
                 "/api/v1.0/flight/booking/**",
-                "/api/v1.0/flight/ticket/**",
+                "/api/v1.0/flight/ticket/id/**",
                 "/api/v1.0/flight/bookings/**"
         ));
 
@@ -109,8 +109,10 @@ public class WebSecurityConfig {
                         .pathMatchers("/api/v1.0/flight/admin/flights/**").hasAnyAuthority("ROLE_ADMIN")
                         .pathMatchers("/api/v1.0/flight/admin/inventory").hasAnyAuthority("ROLE_ADMIN")
                         .pathMatchers("/api/v1.0/flight/booking/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
-                        .pathMatchers("/api/v1.0/flight/ticket/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                        .pathMatchers("/api/v1.0/flight/ticket/id/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                         .pathMatchers("/api/v1.0/flight/bookings/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
+                        // Public ticket endpoint - get ticket by PNR (no auth required, must come after protected /id/**)
+                        .pathMatchers("/api/v1.0/flight/ticket/**").permitAll()
                         // Allow all other requests to proceed (gateway will handle routing)
                         .anyExchange().permitAll()
                 )
