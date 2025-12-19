@@ -19,7 +19,7 @@ public class BookingResponse {
     private String contactEmail;
     private Long userId;
     private String ticketId;
-    private List<String> scheduleIds;
+    private String scheduleId;
     private List<PassengerResponse> passengers;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

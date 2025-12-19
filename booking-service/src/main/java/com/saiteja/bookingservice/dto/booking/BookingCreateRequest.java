@@ -14,7 +14,8 @@ public class BookingCreateRequest {
     @NotBlank(message = "Contact email is required")
     @Email(message = "Invalid email format")
     private String contactEmail;
-    private List<@NotBlank(message = "Schedule ID cannot be blank") String> scheduleIds;
+    @NotBlank(message = "Schedule ID is required")
+    private String scheduleId;
     @NotEmpty(message = "At least one passenger is required")
     private List<@Valid PassengerRequest> passengers;
 }

@@ -31,43 +31,36 @@ public class TicketServiceImpl implements TicketService {
         Booking booking = bookingRepository.findById(bookingId)
                 .orElseThrow(() -> new ResourceNotFoundException("Booking not found"));
 
-        if (booking.getScheduleIds().isEmpty()) {
+        if (booking.getScheduleId() == null || booking.getScheduleId().trim().isEmpty()) {
             throw new ResourceNotFoundException("No schedule found for booking");
         }
 
-        // Generate tickets for ALL scheduleIds in the booking
+        // Generate ticket for the booking (one booking = one scheduleId = one ticket)
         LocalDateTime issuedAt = LocalDateTime.now();
-        List<Ticket> ticketsToSave = new java.util.ArrayList<>();
         
-        for (String scheduleId : booking.getScheduleIds()) {
-            // Create a new list with copies of passengers to avoid shared collection reference
-            List<com.saiteja.bookingservice.model.Passenger> ticketPassengers = booking.getPassengers().stream()
-                    .map(p -> com.saiteja.bookingservice.model.Passenger.builder()
-                            .fullName(p.getFullName())
-                            .gender(p.getGender())
-                            .age(p.getAge())
-                            .seatNumber(p.getSeatNumber())
-                            .mealOption(p.getMealOption())
-                            .build())
-                    .collect(Collectors.toList());
-            
-            Ticket ticket = Ticket.builder()
-                    .pnr(booking.getPnr())
-                    .bookingId(booking.getId())
-                    .scheduleId(scheduleId)
-                    .passengers(new java.util.ArrayList<>(ticketPassengers))
-                    .status(TicketStatus.ACTIVE)
-                    .issuedAt(issuedAt)
-                    .build();
-
-            ticketsToSave.add(ticket);
-        }
-
-        // Batch save all tickets for better performance
-        List<Ticket> savedTickets = ticketRepository.saveAll(ticketsToSave);
+        // Create a new list with copies of passengers to avoid shared collection reference
+        List<com.saiteja.bookingservice.model.Passenger> ticketPassengers = booking.getPassengers().stream()
+                .map(p -> com.saiteja.bookingservice.model.Passenger.builder()
+                        .fullName(p.getFullName())
+                        .gender(p.getGender())
+                        .age(p.getAge())
+                        .seatNumber(p.getSeatNumber())
+                        .mealOption(p.getMealOption())
+                        .build())
+                .collect(Collectors.toList());
         
-        // Return the first ticket (for backward compatibility)
-        return toResponse(savedTickets.get(0));
+        Ticket ticket = Ticket.builder()
+                .pnr(booking.getPnr())
+                .bookingId(booking.getId())
+                .scheduleId(booking.getScheduleId())
+                .passengers(new java.util.ArrayList<>(ticketPassengers))
+                .status(TicketStatus.ACTIVE)
+                .issuedAt(issuedAt)
+                .build();
+
+        Ticket savedTicket = ticketRepository.save(ticket);
+        
+        return toResponse(savedTicket);
     }
 
     @Override

@@ -38,12 +38,9 @@ public class Booking {
     @Column(name = "pnr", unique = true, nullable = false, length = 10)
     private String pnr;
 
-    @ElementCollection
-    @CollectionTable(name = "booking_schedule_ids", joinColumns = @JoinColumn(name = "booking_id"))
-    @Column(name = "schedule_id", length = 36)
-    @NotEmpty(message = "At least one schedule must be selected")
-    @Builder.Default
-    private List<String> scheduleIds = new ArrayList<>();
+    @NotBlank(message = "Schedule ID is required")
+    @Column(name = "schedule_id", nullable = false, length = 36)
+    private String scheduleId;
 
     @NotBlank(message = "Contact email is required")
     @Email(message = "Invalid email format")

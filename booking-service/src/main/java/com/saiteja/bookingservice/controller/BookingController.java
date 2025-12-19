@@ -36,7 +36,7 @@ public class BookingController {
             HttpServletRequest httpRequest
     ) {
         Long userId = getUserIdFromRequest(httpRequest);
-        request.setScheduleIds(List.of(scheduleId));
+        request.setScheduleId(scheduleId);
         String pnr = bookingService.createBooking(request, userId);
         return ResponseEntity.status(HttpStatus.CREATED).body(pnr);
     }

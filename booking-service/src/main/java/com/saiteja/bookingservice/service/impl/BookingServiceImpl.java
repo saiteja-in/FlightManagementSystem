@@ -39,48 +39,23 @@ public class BookingServiceImpl implements BookingService {
             throw new BadRequestException("User ID is required");
         }
 
-        if (request.getScheduleIds() == null || request.getScheduleIds().isEmpty()) {
-            throw new BadRequestException("At least one schedule id is required");
+        if (request.getScheduleId() == null || request.getScheduleId().trim().isEmpty()) {
+            throw new BadRequestException("Schedule ID is required");
         }
 
         if (request.getPassengers() == null || request.getPassengers().isEmpty()) {
             throw new BadRequestException("At least one passenger is required");
         }
 
-        // Lock seats in flight-service for ALL scheduleIds
+        // Lock seats in flight-service for the schedule
         List<String> seatNumbers = request.getPassengers().stream()
                 .map(com.saiteja.bookingservice.dto.passenger.PassengerRequest::getSeatNumber)
                 .collect(Collectors.toList());
 
-        for (String scheduleId : request.getScheduleIds()) {
-            try {
-                flightServiceClient.lockSeats(scheduleId, seatNumbers);
-            } catch (BadRequestException e) {
-                // If locking fails for any schedule, release already locked seats
-                for (String lockedScheduleId : request.getScheduleIds()) {
-                    if (!lockedScheduleId.equals(scheduleId)) {
-                        try {
-                            flightServiceClient.releaseSeats(lockedScheduleId, seatNumbers);
-                        } catch (Exception releaseEx) {
-                            // Log but don't throw - we're already in error state
-                        }
-                    }
-                }
-                // Re-throw the BadRequestException with the user-friendly message
-                throw e;
-            } catch (Exception e) {
-                // If locking fails for any schedule, release already locked seats
-                for (String lockedScheduleId : request.getScheduleIds()) {
-                    if (!lockedScheduleId.equals(scheduleId)) {
-                        try {
-                            flightServiceClient.releaseSeats(lockedScheduleId, seatNumbers);
-                        } catch (Exception releaseEx) {
-                            // Log but don't throw - we're already in error state
-                        }
-                    }
-                }
-                throw new BadRequestException("Failed to lock seats for schedule " + scheduleId + ": " + e.getMessage());
-            }
+        try {
+            flightServiceClient.lockSeats(request.getScheduleId(), seatNumbers);
+        } catch (Exception e) {
+            throw new BadRequestException("Failed to lock seats for schedule " + request.getScheduleId() + ": " + e.getMessage());
         }
 
         // Generate unique PNR
@@ -91,7 +66,7 @@ public class BookingServiceImpl implements BookingService {
                 .pnr(pnr)
                 .contactEmail(request.getContactEmail().trim().toLowerCase())
                 .userId(userId)
-                .scheduleIds(request.getScheduleIds())
+                .scheduleId(request.getScheduleId())
                 .passengers(mapPassengers(request))
                 .status(BookingStatus.CONFIRMED)
                 .build();
@@ -144,18 +119,16 @@ public class BookingServiceImpl implements BookingService {
 
         booking.setStatus(BookingStatus.CANCELLED);
 
-        // Release seats for ALL scheduleIds
+        // Release seats for the schedule
         List<String> seatNumbers = booking.getPassengers().stream()
                 .map(Passenger::getSeatNumber)
                 .collect(Collectors.toList());
 
-        for (String scheduleId : booking.getScheduleIds()) {
-            try {
-                flightServiceClient.releaseSeats(scheduleId, seatNumbers);
-            } catch (Exception e) {
-                // Log error but continue releasing seats for other schedules
-                // We don't want to fail the cancellation if one schedule fails
-            }
+        try {
+            flightServiceClient.releaseSeats(booking.getScheduleId(), seatNumbers);
+        } catch (Exception e) {
+            // Log error but don't fail cancellation if seat release fails
+            // The booking is already marked as cancelled
         }
 
         // Cancel all tickets for this booking - use batch save for better performance
@@ -210,7 +183,7 @@ public class BookingServiceImpl implements BookingService {
                 .contactEmail(booking.getContactEmail())
                 .userId(booking.getUserId())
                 .ticketId(ticketId)
-                .scheduleIds(booking.getScheduleIds())
+                .scheduleId(booking.getScheduleId())
                 .passengers(passengers)
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
