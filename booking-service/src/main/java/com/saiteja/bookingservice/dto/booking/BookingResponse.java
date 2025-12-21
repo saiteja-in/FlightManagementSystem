@@ -20,6 +20,7 @@ public class BookingResponse {
     private Long userId;
     private String ticketId;
     private String scheduleId;
+    private String status;
     private List<PassengerResponse> passengers;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

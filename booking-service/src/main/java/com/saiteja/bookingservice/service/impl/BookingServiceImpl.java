@@ -184,6 +184,7 @@ public class BookingServiceImpl implements BookingService {
                 .userId(booking.getUserId())
                 .ticketId(ticketId)
                 .scheduleId(booking.getScheduleId())
+                .status(booking.getStatus().name())
                 .passengers(passengers)
                 .createdAt(booking.getCreatedAt())
                 .updatedAt(booking.getUpdatedAt())
