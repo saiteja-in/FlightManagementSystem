@@ -1,5 +1,6 @@
 package com.saiteja.apigateway.service;
 
+import com.saiteja.apigateway.dto.request.ChangePasswordRequest;
 import com.saiteja.apigateway.dto.request.LoginRequest;
 import com.saiteja.apigateway.dto.request.SignupRequest;
 import com.saiteja.apigateway.dto.response.JwtResponse;
@@ -15,6 +16,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.ReactiveAuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.ReactiveSecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
@@ -106,6 +109,40 @@ public class AuthService {
                             userDetails.getUsername(),
                             userDetails.getEmail(),
                             roles));
+                });
+    }
+
+    public Mono<MessageResponse> changePassword(ChangePasswordRequest request) {
+        return ReactiveSecurityContextHolder.getContext()
+                .switchIfEmpty(Mono.error(new RuntimeException("Unauthenticated")))
+                .flatMap(securityContext -> {
+                    Object principal = securityContext.getAuthentication().getPrincipal();
+                    String username;
+                    if (principal instanceof UserDetails) {
+                        username = ((UserDetails) principal).getUsername();
+                    } else {
+                        username = securityContext.getAuthentication().getName();
+                    }
+
+                    String finalUsername = username;
+                    return Mono.fromCallable(() -> {
+                                User user = userRepository.findByUsername(finalUsername)
+                                        .orElseThrow(() -> new RuntimeException("User not found"));
+
+                                if (!passwordEncoder.matches(request.getCurrentPassword(), user.getPassword())) {
+                                    throw new RuntimeException("Current password is incorrect");
+                                }
+
+                                if (passwordEncoder.matches(request.getNewPassword(), user.getPassword())) {
+                                    throw new RuntimeException("New password must be different from current password");
+                                }
+
+                                user.setPassword(passwordEncoder.encode(request.getNewPassword()));
+                                userRepository.save(user);
+
+                                return new MessageResponse("Password updated successfully");
+                            })
+                            .subscribeOn(Schedulers.boundedElastic());
                 });
     }
 

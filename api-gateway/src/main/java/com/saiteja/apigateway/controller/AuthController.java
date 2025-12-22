@@ -1,5 +1,6 @@
 package com.saiteja.apigateway.controller;
 
+import com.saiteja.apigateway.dto.request.ChangePasswordRequest;
 import com.saiteja.apigateway.dto.request.GoogleTokenRequest;
 import com.saiteja.apigateway.dto.request.LoginRequest;
 import com.saiteja.apigateway.dto.request.SignupRequest;
@@ -100,6 +101,17 @@ public class AuthController {
         // Token is valid
         return Mono.just(ResponseEntity.ok()
                 .body(new MessageResponse("Token is valid")));
+    }
+
+    @PostMapping("/change-password")
+    public Mono<ResponseEntity<?>> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(new MessageResponse("New password and confirm password do not match")));
+        }
+
+        return authService.changePassword(request)
+                .map(messageResponse -> ResponseEntity.ok(messageResponse));
     }
 
     private String getTokenFromCookie(ServerHttpRequest request) {

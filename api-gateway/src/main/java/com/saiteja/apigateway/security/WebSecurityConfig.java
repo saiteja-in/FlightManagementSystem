@@ -88,7 +88,8 @@ public class WebSecurityConfig {
                 "/api/v1.0/flight/admin/inventory",
                 "/api/v1.0/flight/booking/**",
                 "/api/v1.0/flight/ticket/id/**",
-                "/api/v1.0/flight/bookings/**"
+                "/api/v1.0/flight/bookings/**",
+                "/api/v1.0/auth/change-password"
         ));
 
         http
@@ -98,14 +99,19 @@ public class WebSecurityConfig {
                 .csrf(csrf -> csrf.disable())
                 .exceptionHandling(exception -> exception.authenticationEntryPoint(unauthorizedHandler))
                 .authorizeExchange(exchanges -> exchanges
-                        // Public endpoints - no authentication required
-                        .pathMatchers("/api/v1.0/auth/**").permitAll()
+                        // Public auth endpoints - no authentication required
+                        .pathMatchers("/api/v1.0/auth/signin",
+                                      "/api/v1.0/auth/signup",
+                                      "/api/v1.0/auth/signout",
+                                      "/api/v1.0/auth/validate",
+                                      "/api/v1.0/auth/oauth/**").permitAll()
                         .pathMatchers("/health").permitAll()
                         .pathMatchers("/api/v1.0/flight/admin/internal/**").permitAll()
                         .pathMatchers("/api/v1.0/flight/admin/search").permitAll()
                         // OAuth2 endpoints
                         .pathMatchers("/oauth2/**", "/login/oauth2/**").permitAll()
                         // Protected endpoints - require authentication with specific roles
+                        .pathMatchers("/api/v1.0/auth/change-password").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
                         .pathMatchers("/api/v1.0/flight/admin/flights/**").hasAnyAuthority("ROLE_ADMIN")
                         .pathMatchers("/api/v1.0/flight/admin/inventory").hasAnyAuthority("ROLE_ADMIN")
                         .pathMatchers("/api/v1.0/flight/booking/**").hasAnyAuthority("ROLE_USER", "ROLE_ADMIN")
