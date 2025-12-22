@@ -1,9 +1,11 @@
-FROM maven:3.8.5-openjdk-17
+FROM eclipse-temurin:17-jre-alpine
 
-WORKDIR /booking-service
+WORKDIR /app
 
 COPY target/booking-service-0.0.1-SNAPSHOT.jar app.jar
 
 EXPOSE 8081
 
-CMD ["java","-jar","app.jar"]
+ENV SPRING_PROFILES_ACTIVE=docker
+
+ENTRYPOINT ["java","-jar","/app/app.jar"]
