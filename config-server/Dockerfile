@@ -1,4 +1,6 @@
-FROM eclipse-temurin:17-jre-alpine
+FROM eclipse-temurin:21-jre-alpine
+
+RUN apk add --no-cache wget
 
 WORKDIR /app
 
@@ -8,5 +10,5 @@ EXPOSE 8888
 
 ENV SPRING_PROFILES_ACTIVE=docker
 
-ENTRYPOINT ["java","-jar","/app/app.jar"]
+ENTRYPOINT ["java", "-jar", "/app/app.jar"]
 

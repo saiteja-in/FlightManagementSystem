@@ -1,20 +1,27 @@
-version: "3.9"
-
 services:
   config-server:
     build: ./config-server
     container_name: config-server
+    restart: unless-stopped
     depends_on:
-      - eureka-server
+      eureka-server:
+        condition: service_healthy
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
     ports:
       - "8888:8888"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8888/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 90s
     networks:
       - fms-net
   eureka-server:
     build: ./eureka-server
     container_name: eureka-server
+    restart: unless-stopped
     ports:
       - "8761:8761"
     environment:
@@ -22,6 +29,12 @@ services:
       - EUREKA_CLIENT_FETCH_REGISTRY=false
       - EUREKA_CLIENT_REGISTER_WITH_EUREKA=false
       - SERVER_PORT=8761
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8761/ || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 120s
     networks:
       - fms-net
 
@@ -30,13 +43,18 @@ services:
     container_name: postgres-flight
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=flight_db
+      - POSTGRES_DB=flight_db_docker
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=root
     ports:
       - "5433:5432"
     volumes:
       - pgdata-flight:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - fms-net
 
@@ -45,13 +63,18 @@ services:
     container_name: postgres-booking
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=booking_db
+      - POSTGRES_DB=booking_db_docker
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=root
     ports:
       - "5434:5432"
     volumes:
       - pgdata-booking:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - fms-net
 
@@ -60,25 +83,34 @@ services:
     container_name: postgres-gateway
     restart: unless-stopped
     environment:
-      - POSTGRES_DB=api_gateway_db
+      - POSTGRES_DB=api_gateway_db_docker
       - POSTGRES_USER=postgres
       - POSTGRES_PASSWORD=root
     ports:
       - "5435:5432"
     volumes:
       - pgdata-gateway:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - fms-net
 
   flight-service:
     build: ./flight-service
     container_name: flight-service
+    restart: unless-stopped
     depends_on:
-      - eureka-server
-      - config-server
-      - postgres-flight
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      postgres-flight:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-flight:5432/flight_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-flight:5432/flight_db_docker
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=root
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
@@ -87,18 +119,28 @@ services:
       - SERVER_PORT=8080
     ports:
       - "8080:8080"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8080/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 120s
     networks:
       - fms-net
 
   booking-service:
     build: ./booking-service
     container_name: booking-service
+    restart: unless-stopped
     depends_on:
-      - eureka-server
-      - config-server
-      - postgres-booking
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      postgres-booking:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-booking:5432/booking_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-booking:5432/booking_db_docker
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=root
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
@@ -107,23 +149,34 @@ services:
       - SERVER_PORT=8081
     ports:
       - "8081:8081"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8081/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 120s
     networks:
       - fms-net
 
   api-gateway:
     build: ./api-gateway
     container_name: api-gateway
+    restart: unless-stopped
     depends_on:
-      - eureka-server
-      - config-server
-      - flight-service
-      - booking-service
-      - postgres-gateway
+      eureka-server:
+        condition: service_healthy
+      config-server:
+        condition: service_healthy
+      postgres-gateway:
+        condition: service_healthy
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-gateway:5432/api_gateway_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres-gateway:5432/api_gateway_db_docker
       - SPRING_DATASOURCE_USERNAME=postgres
       - SPRING_DATASOURCE_PASSWORD=root
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka
+      - EUREKA_CLIENT_FETCH_REGISTRY=true
+      - EUREKA_CLIENT_REGISTER_WITH_EUREKA=true
+      - EUREKA_INSTANCE_PREFER_IP_ADDRESS=true
       - EUREKA_INSTANCE_HOSTNAME=api-gateway
       - CONFIG_SERVER_URI=http://config-server:8888
       - SERVER_PORT=8765
@@ -132,6 +185,12 @@ services:
       - FRONTEND_URL=${FRONTEND_URL}
     ports:
       - "8765:8765"
+    healthcheck:
+      test: ["CMD-SHELL", "wget --quiet --tries=1 --spider http://localhost:8765/actuator/health || exit 1"]
+      interval: 30s
+      timeout: 15s
+      retries: 10
+      start_period: 150s
     networks:
       - fms-net
 
