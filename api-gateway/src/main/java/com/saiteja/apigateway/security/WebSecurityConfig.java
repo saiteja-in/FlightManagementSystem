@@ -104,6 +104,8 @@ public class WebSecurityConfig {
                                       "/api/v1.0/auth/signup",
                                       "/api/v1.0/auth/signout",
                                       "/api/v1.0/auth/validate",
+                                      "/api/v1.0/auth/forgot-password",
+                                      "/api/v1.0/auth/reset-password",
                                       "/api/v1.0/auth/oauth/**").permitAll()
                         .pathMatchers("/health").permitAll()
                         .pathMatchers("/api/v1.0/flight/admin/internal/**").permitAll()

@@ -1,8 +1,10 @@
 package com.saiteja.apigateway.controller;
 
 import com.saiteja.apigateway.dto.request.ChangePasswordRequest;
+import com.saiteja.apigateway.dto.request.ForgotPasswordRequest;
 import com.saiteja.apigateway.dto.request.GoogleTokenRequest;
 import com.saiteja.apigateway.dto.request.LoginRequest;
+import com.saiteja.apigateway.dto.request.ResetPasswordRequest;
 import com.saiteja.apigateway.dto.request.SignupRequest;
 import com.saiteja.apigateway.dto.response.MessageResponse;
 import com.saiteja.apigateway.security.jwt.JwtUtils;
@@ -112,6 +114,42 @@ public class AuthController {
 
         return authService.changePassword(request)
                 .map(messageResponse -> ResponseEntity.ok(messageResponse));
+    }
+
+    @PostMapping("/forgot-password")
+    public Mono<ResponseEntity<?>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        return authService.processForgotPassword(request.getEmail())
+                .<ResponseEntity<?>>map(messageResponse -> {
+                    // Check if message indicates email was sent successfully
+                    if (messageResponse.getMessage().contains("Password reset link has been sent")) {
+                        return ResponseEntity.ok(messageResponse);
+                    } else {
+                        // Email doesn't exist or other issue - return bad request
+                        return ResponseEntity.badRequest().body(messageResponse);
+                    }
+                })
+                .onErrorResume(e -> {
+                    MessageResponse errorResponse = new MessageResponse("Error: " + e.getMessage());
+                    return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse));
+                });
+    }
+
+    @PostMapping("/reset-password")
+    public Mono<ResponseEntity<?>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        if (!request.getNewPassword().equals(request.getConfirmPassword())) {
+            return Mono.just(ResponseEntity.badRequest()
+                    .body(new MessageResponse("New password and confirm password do not match")));
+        }
+
+        return authService.resetPassword(request.getToken(), request.getNewPassword())
+                .<ResponseEntity<?>>map(messageResponse -> ResponseEntity.ok(messageResponse))
+                .onErrorResume(e -> {
+                    MessageResponse errorResponse = new MessageResponse("Error: " + e.getMessage());
+                    HttpStatus status = e.getMessage().contains("expired") || e.getMessage().contains("Invalid") 
+                            ? HttpStatus.BAD_REQUEST 
+                            : HttpStatus.INTERNAL_SERVER_ERROR;
+                    return Mono.just(ResponseEntity.status(status).body(errorResponse));
+                });
     }
 
     private String getTokenFromCookie(ServerHttpRequest request) {

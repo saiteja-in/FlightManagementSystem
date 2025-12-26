@@ -6,8 +6,10 @@ import com.saiteja.apigateway.dto.request.SignupRequest;
 import com.saiteja.apigateway.dto.response.JwtResponse;
 import com.saiteja.apigateway.dto.response.MessageResponse;
 import com.saiteja.apigateway.model.ERole;
+import com.saiteja.apigateway.model.PasswordResetToken;
 import com.saiteja.apigateway.model.Role;
 import com.saiteja.apigateway.model.User;
+import com.saiteja.apigateway.repository.PasswordResetTokenRepository;
 import com.saiteja.apigateway.repository.RoleRepository;
 import com.saiteja.apigateway.repository.UserRepository;
 import com.saiteja.apigateway.security.jwt.JwtUtils;
@@ -20,17 +22,23 @@ import org.springframework.security.core.context.ReactiveSecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 import reactor.core.scheduler.Schedulers;
 
 import java.security.SecureRandom;
+import java.time.LocalDateTime;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @Service
 public class AuthService {
+
+    private static final Logger logger = LoggerFactory.getLogger(AuthService.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -46,6 +54,15 @@ public class AuthService {
 
     @Autowired
     private ReactiveAuthenticationManager authenticationManager;
+
+    @Autowired
+    private PasswordResetTokenRepository passwordResetTokenRepository;
+
+    @Autowired
+    private EmailService emailService;
+
+    @org.springframework.beans.factory.annotation.Value("${app.frontend.url:http://localhost:4200}")
+    private String frontendUrl;
 
     public Mono<MessageResponse> register(SignupRequest signUpRequest) {
         return Mono.fromCallable(() -> {
@@ -255,6 +272,80 @@ public class AuthService {
             password.append(chars.charAt(random.nextInt(chars.length())));
         }
         return password.toString();
+    }
+
+    public Mono<MessageResponse> processForgotPassword(String email) {
+        return Mono.fromCallable(() -> {
+            // Find user by email
+            User user = userRepository.findByEmail(email).orElse(null);
+
+            // Check if user exists
+            if (user == null) {
+                return new MessageResponse("No account found with this email address.");
+            }
+
+            // Check if user is a local user (not OAuth)
+            if (user.getProvider() != null && !"local".equals(user.getProvider())) {
+                return new MessageResponse("Password reset is not available for accounts signed in with Google. Please use Google Sign-In.");
+            }
+
+            // Invalidate existing tokens for this user
+            passwordResetTokenRepository.findByUser(user).ifPresent(existingToken -> {
+                passwordResetTokenRepository.deleteByUser(user);
+            });
+
+            // Generate secure random token
+            String token = UUID.randomUUID().toString();
+
+            // Create token with 1 hour expiration
+            LocalDateTime expiryDate = LocalDateTime.now().plusHours(1);
+            PasswordResetToken resetToken = new PasswordResetToken(token, user, expiryDate);
+            passwordResetTokenRepository.save(resetToken);
+
+            // Send email with reset link
+            String resetUrl = frontendUrl + "/reset-password";
+            try {
+                emailService.sendPasswordResetEmail(email, token, resetUrl);
+                return new MessageResponse("Password reset link has been sent to your email address. Please check your inbox.");
+            } catch (Exception e) {
+                // Log error but don't expose details to user
+                logger.error("Failed to send password reset email to {}: {}", email, e.getMessage(), e);
+                // Delete the token since email failed
+                passwordResetTokenRepository.delete(resetToken);
+                throw new RuntimeException("Failed to send password reset email. Please try again later.");
+            }
+        }).subscribeOn(Schedulers.boundedElastic());
+    }
+
+    public Mono<MessageResponse> resetPassword(String token, String newPassword) {
+        return Mono.fromCallable(() -> {
+            // Find token in database
+            PasswordResetToken resetToken = passwordResetTokenRepository.findByToken(token)
+                    .orElseThrow(() -> new RuntimeException("Invalid or expired reset token"));
+
+            // Check if token is expired
+            if (resetToken.isExpired()) {
+                passwordResetTokenRepository.delete(resetToken);
+                throw new RuntimeException("Reset token has expired. Please request a new password reset.");
+            }
+
+            // Get associated user
+            User user = resetToken.getUser();
+
+            // Validate new password is different from old password
+            if (passwordEncoder.matches(newPassword, user.getPassword())) {
+                throw new RuntimeException("New password must be different from your current password");
+            }
+
+            // Update password
+            user.setPassword(passwordEncoder.encode(newPassword));
+            userRepository.save(user);
+
+            // Delete token (one-time use)
+            passwordResetTokenRepository.delete(resetToken);
+
+            return new MessageResponse("Password has been reset successfully. You can now login with your new password.");
+        }).subscribeOn(Schedulers.boundedElastic());
     }
 }
 

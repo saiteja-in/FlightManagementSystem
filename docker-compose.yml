@@ -127,6 +127,9 @@ services:
       - EUREKA_INSTANCE_HOSTNAME=api-gateway
       - CONFIG_SERVER_URI=http://config-server:8888
       - SERVER_PORT=8765
+      - RESEND_API_KEY=${RESEND_API_KEY}
+      - RESEND_FROM_EMAIL=${RESEND_FROM_EMAIL}
+      - FRONTEND_URL=${FRONTEND_URL}
     ports:
       - "8765:8765"
     networks:
